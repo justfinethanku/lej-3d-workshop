@@ -29,7 +29,7 @@ These labeled fields are editable and extensible, not a fixed schema or allowed-
 - `material_source`: LEJ public API and owner Fleet inventory. Other options include your API, spreadsheet, local notes, none, or a custom source; identify its location and authority here.
 - `inventory_library`: LEJ Workshop at `https://www.limitededitionjonathan.com/print-inventory` and `/print-library`. Public APIs: `/api/print-inventory` and `/api/print-filament` on that host. Fleet is Jonathan's canonical inventory and preservation service; other users may substitute their own catalog or local records.
 - `fleet_access` (when enrolled): discover resources using `fleet resources` / `fleet resource`; credentials only through `fleet get`. No LAN access assumed. Local CSV/Numbers exports are historical snapshots.
-- `communication`: plain language; concise updates; distinguish measured facts, assumptions, software validation, and physically inspected results. Questions and planning requests are not authorization to change files or publish.
+- `communication`: plain language; concise updates; distinguish measured facts, assumptions, software validation, and physically inspected results.
 - `config_provenance`: initial public setup supplied by Jonathan, September 2026. Refresh drift-prone hardware/software facts during use; add the adapting user's distinctions here.
 <!-- USER_CONFIG_END -->
 
@@ -51,6 +51,6 @@ Start from the desired object, key measurements, source evidence and physical co
 
 For larger projects, preserve source and prior versions, separate generated files, and agree shared units/origin/interfaces before parallel modeling. A useful default layout is `01-concepts/`, `02-cad/` or `02-blender/`, `03-exports/`, `04-docs/`. Adapt it to existing project conventions. Keep caches and environments out of deliverable folders.
 
-Before handoff, check dimensions, sound geometry, fit, exported-file round trips, and print preparation at a depth appropriate to the work. Give useful previews and concise print notes. A generic 3MF mesh is not automatically a configured slicer project. Label software-only outcomes accurately: **print-ready, not physically proven** only after required software checks pass; otherwise identify what remains unverified.
+Before handoff, check dimensions, sound geometry, fit, exported-file round trips, and print preparation at a depth appropriate to the work. Give useful previews and concise print notes. A generic 3MF mesh is not automatically a configured slicer project. Label software-only outcomes accurately. **Print-ready, not physically proven** means the software checks passed; anything less names what remains unverified.
 
-Preserve exact released files and evidence. Material estimates do not change inventory. Designing or slicing does not by itself authorize sending a printer job, changing stock, or publishing files; follow the user's actual scope without repeated permission questions for work already authorized.
+Preserve exact released files and evidence. Material estimates do not change inventory. A question or planning request is not authorization to change files or publish, and designing or slicing does not by itself authorize sending a printer job, changing stock, or publishing files. Follow the user's actual scope without repeated permission questions for work already authorized.

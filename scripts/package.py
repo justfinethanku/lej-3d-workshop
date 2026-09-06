@@ -7,6 +7,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / 'skill' / 'lej-3d-workshop'
+EXCLUDED_DIRS = {'__pycache__', 'cadquery-verification'}
 
 
 def build():
@@ -19,11 +20,13 @@ def build():
             raise ValueError(f'Expected exactly one {marker}')
     if entry.index('<!-- USER_CONFIG_START -->') > entry.index('<!-- USER_CONFIG_END -->'):
         raise ValueError('User config markers are reversed')
-    # Package maintained instructions/code only; runtime outputs are never distributable.
+    # Package every maintained file in the skill folder. Hidden files, caches and
+    # generated verification runs are never distributable.
     sources = sorted(p for p in SKILL.rglob('*')
-                     if p.is_file() and p.suffix in {'.md', '.py', '.yaml'}
-                     and not any(part.startswith('.') or part == '__pycache__'
+                     if p.is_file() and p.suffix != '.pyc'
+                     and not any(part.startswith('.') or part in EXCLUDED_DIRS
                                  for part in p.relative_to(SKILL).parts))
+    packaged = {p.resolve() for p in sources}
     for source in sources:
         if source.is_symlink():
             raise ValueError(f'Symlink is not a portable package file: {source}')
@@ -32,8 +35,8 @@ def build():
                 if target.startswith(('https://', 'http://', '#', 'mailto:')):
                     continue
                 destination = (source.parent / target.split('#')[0]).resolve()
-                if not destination.is_relative_to(SKILL.resolve()) or not destination.is_file():
-                    raise ValueError(f'Broken or external local reference: {source}: {target}')
+                if destination not in packaged:
+                    raise ValueError(f'Linked file is missing or not packaged: {source}: {target}')
     content = {f'lej-3d-workshop/{p.relative_to(SKILL).as_posix()}': p.read_bytes() for p in sources}
     for name in ('LICENSE', 'VERSION'):
         content[f'lej-3d-workshop/{name}'] = (ROOT / name).read_bytes()
@@ -47,9 +50,11 @@ def build():
             info.external_attr = 0o100644 << 16
             bundle.writestr(info, data)
     with zipfile.ZipFile(archive) as bundle:
-        assert set(bundle.namelist()) == set(content)
+        if set(bundle.namelist()) != set(content):
+            raise ValueError('Archive entry list differs from sources')
         for name, data in content.items():
-            assert bundle.read(name) == data, f'Archive content differs: {name}'
+            if bundle.read(name) != data:
+                raise ValueError(f'Archive content differs: {name}')
     checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
     (output / 'SHA256SUMS').write_text(f'{checksum}  {archive.name}\n')
     print(f'Validated {len(sources)} skill files; verified {len(content)} archive entries')

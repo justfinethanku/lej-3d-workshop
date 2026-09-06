@@ -1,8 +1,15 @@
 # Material planning
 
-Apply these evidence principles with any inventory system. Jonathan's configured live catalog is the LEJ/Fleet Workshop; read [Workshop data contract](workshop-data.md) only when working with that service. Inventory is not current loaded state. Public read-only endpoints are in User config; `?item_id=ITEM_ID` filters filament guidance. If an endpoint is unavailable, explain the limitation and discover another authorized live source. Local proposals are not published downloadable profiles.
+Apply these evidence principles with any inventory system. Inventory is not current loaded state. Unknown is unknown, not zero. Local proposals are not published downloadable profiles.
 
-If `material_source` is another API, inspect that API's current contract. If it is a spreadsheet or local notes, inspect that user's designated source and its date; distinguish a live owner-maintained record from an old export. If it is none, plan from supplied facts and manufacturer guidance, mark availability unknown, and ask only for material choices needed to make the object usable. These alternatives need no LEJ/Fleet account. Jonathan's retired exports remain historical under his configuration.
+Start from the `material_source` field in User config:
+
+- LEJ/Fleet Workshop (Jonathan's configuration): read the [Workshop data contract](workshop-data.md) for endpoints, tables and authorized writes.
+- Another API: inspect that API's current contract before relying on it.
+- A spreadsheet or local notes: inspect the designated file and its date; distinguish a live owner-maintained record from an old export.
+- None: plan from supplied facts and manufacturer guidance, mark availability unknown, and ask only for the material choices needed to make the object usable.
+
+None of these alternatives needs an LEJ/Fleet account. If a configured source is unavailable, say so and use another authorized source rather than guessing.
 
 ## Make a material and hardware plan
 
@@ -20,6 +27,6 @@ Store original amount/unit, observed time, source, evidence and honest attributi
 
 ## Preserve the plan with the exact project
 
-Download the selected verified files through owner access or a selected revocable share. Verify SHA-256/size, preserve local originals, and import into the compatible slicer with dependencies. Software validation is not a physical print result. Attach exact published profile versions and resolved settings snapshots to a draft project release or planned print before use; sealed releases stay immutable. Record actual outcomes, error codes and improvement suggestions separately.
+Keep the exact settings used with the project: the preset or settings file, slicer version, printer/nozzle/plate, and material. When your catalog publishes verified profiles, download the selected files through owner access or a selected revocable share, verify SHA-256/size, preserve local originals, and attach exact published profile versions and resolved settings snapshots to a draft release or planned print before use; sealed releases stay immutable. Otherwise preserve the local preset or exported settings file beside the project's exports and notes. Software validation is not a physical print result. Record actual outcomes, error codes and improvement suggestions separately.
 
 Do not silently change released files/settings, calibrate hardware, start printing, poll devices, install background jobs, or deduct material. Print estimates, printer-reported usage, and confirmed consumption stay separate from stock observations. This skill does not grant write permission beyond the user’s task.

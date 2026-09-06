@@ -19,15 +19,17 @@ uv venv --python 3.12 "Shared Tools/cadquery/.venv"
 uv pip install --python "Shared Tools/cadquery/.venv/bin/python" cadquery==2.8.0 trimesh==5.1.0 numpy
 ```
 
-These paths reflect the configured workspace; adapt them to your OS. Record resolved package versions after installation. The local tool folder contains a full lockfile and README. Do not assume the public skill includes that machine's runtime. Standard `venv`/pip or conda is also suitable when supported.
+These are the versions validated together on macOS arm64; newer releases may work, but test them before replacing a working environment. Standard `venv`/pip or conda is also fine. On Windows the environment's interpreter is `.venv\Scripts\python.exe`. Always run scripts with the environment's own interpreter rather than a bare `python`, which may resolve to a different installation. Record resolved package versions after installation. Jonathan's tool folder keeps a full lockfile and README; the public skill does not include that runtime.
 
 ## Verify a first-time installation
 
-The complete skill includes [verify_cadquery.py](../scripts/verify_cadquery.py), the same executable tryout used to check Jonathan's installation. It requires CadQuery, numpy and trimesh in the selected environment. Run it with that environment's Python and an explicit project output folder:
+The complete skill includes [verify_cadquery.py](../scripts/verify_cadquery.py), the same executable tryout used to check Jonathan's installation. It requires CadQuery, numpy and trimesh in the selected environment. Run it with that environment's own Python and an explicit project output folder:
 
 ```sh
-python /path/to/lej-3d-workshop/scripts/verify_cadquery.py --output-dir /path/to/Projects/cadquery-tryout
+"Shared Tools/cadquery/.venv/bin/python" /path/to/lej-3d-workshop/scripts/verify_cadquery.py --output-dir /path/to/Projects/cadquery-tryout
 ```
+
+On Windows substitute `.venv\Scripts\python.exe`. Jonathan's `Shared Tools/cadquery/cq-python` wrapper is the same interpreter on his machine.
 
 Read the generated report, exports and previews. It checks dimensional intent, valid solids, parameter changes, mesh and STEP round trips, and package structure. It writes a new timestamped subfolder inside the requested output tree, preserving earlier runs. It does not slice, connect to a printer or prove physical fit. Independently inspect the exports in your slicer before a print-ready handoff.
 
