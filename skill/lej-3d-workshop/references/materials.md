@@ -9,7 +9,7 @@ Start from the `material_source` field in User config:
 - A spreadsheet or local notes: inspect the designated file and its date; distinguish a live owner-maintained record from an old export.
 - None: plan from supplied facts and manufacturer guidance, mark availability unknown, and ask only for the material choices needed to make the object usable.
 
-None of these alternatives needs an LEJ/Fleet account. If a configured source is unavailable, say so and use another authorized source rather than guessing.
+The non-LEJ alternatives need no LEJ/Fleet account. If a configured source is unavailable, say so and use another authorized source rather than guessing.
 
 ## Make a material and hardware plan
 
