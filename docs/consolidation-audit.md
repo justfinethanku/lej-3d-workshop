@@ -1,0 +1,9 @@
+# Initial consolidation audit — September 6, 2026
+
+Reviewed the installed Codex `workshop-material-planning` skill and `references/data-rules.md`, the matching LEJ website mirror from fetched main, the current LEJ print-filament contract, and the workspace AGENTS instructions. The prior main skill's material/hardware planning, observation and exact-profile preservation sections are retained in `references/materials.md`; data rules and additional library/inventory invariants live in `references/workshop-data.md`.
+
+Searched Codex and Claude skills for directly related print/workshop skills. `ristor3d-producer-update-email` belongs to software-project closeout communications rather than physical printing; it remains independent. Broad Blender/image/frontend/publishing skills likewise retain their own scope instead of being copied into this printing skill. This audit does not claim every installed skill was exhaustively read.
+
+Callers to migrate: workspace `AGENTS.md` material-planning instruction; Codex installed `workshop-material-planning` entrypoint; LEJ `docs/current/skills/workshop-material-planning/` mirror and its callers. Replace old entrypoints with compatibility pointers to the canonical new skill, not independently maintained copies. Canonical runtime installation should point to this repository's `skill/lej-3d-workshop` directory when filesystem links are supported. The public release must package that same directory.
+
+Substantive preserved data distinctions include unknown/zero, receipts/stock, spool allocation/extra stock, observed/recorded times, percent/grams, tare/net evidence, legacy unallocated balances, parent version checks, immutable published profiles/releases, selected revocable shares, inspected print attestations, and no automatic deductions. Fleet is conditional on user configuration; general modeling remains available without it.
