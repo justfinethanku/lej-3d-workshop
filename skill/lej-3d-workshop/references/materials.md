@@ -2,6 +2,8 @@
 
 Apply these evidence principles with any inventory system. Jonathan's configured live catalog is the LEJ/Fleet Workshop; read [Workshop data contract](workshop-data.md) only when working with that service. Inventory is not current loaded state. Public read-only endpoints are in User config; `?item_id=ITEM_ID` filters filament guidance. If an endpoint is unavailable, explain the limitation and discover another authorized live source. Local proposals are not published downloadable profiles.
 
+If `material_source` is another API, inspect that API's current contract. If it is a spreadsheet or local notes, inspect that user's designated source and its date; distinguish a live owner-maintained record from an old export. If it is none, plan from supplied facts and manufacturer guidance, mark availability unknown, and ask only for material choices needed to make the object usable. These alternatives need no LEJ/Fleet account. Jonathan's retired exports remain historical under his configuration.
+
 ## Make a material and hardware plan
 
 Read current products, availability, observations, printer/hotend/AMS parts, guidance, and published profile versions. Filter archived stock; preserve missing values as unknown. Separate received purchase history from available units. Keep known grams and observation coverage together: a partial measured sum is not the total stock balance.

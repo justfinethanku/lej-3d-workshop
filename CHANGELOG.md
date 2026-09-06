@@ -6,3 +6,4 @@
 - Consolidated workshop-material-planning workflow and its inventory/profile evidence rules.
 - Added CadQuery, hybrid CAD/Blender, setup, organization, validation and delivery guidance.
 - Added MIT licensing, contribution guidance, versioned complete bundle and integrity checks.
+- Included the executable 29-check CadQuery tryout and portable bundle README.

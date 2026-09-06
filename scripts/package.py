@@ -19,7 +19,11 @@ def build():
             raise ValueError(f'Expected exactly one {marker}')
     if entry.index('<!-- USER_CONFIG_START -->') > entry.index('<!-- USER_CONFIG_END -->'):
         raise ValueError('User config markers are reversed')
-    sources = sorted(p for p in SKILL.rglob('*') if p.is_file())
+    # Package maintained instructions/code only; runtime outputs are never distributable.
+    sources = sorted(p for p in SKILL.rglob('*')
+                     if p.is_file() and p.suffix in {'.md', '.py', '.yaml'}
+                     and not any(part.startswith('.') or part == '__pycache__'
+                                 for part in p.relative_to(SKILL).parts))
     for source in sources:
         if source.is_symlink():
             raise ValueError(f'Symlink is not a portable package file: {source}')

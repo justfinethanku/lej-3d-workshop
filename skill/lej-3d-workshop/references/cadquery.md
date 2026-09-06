@@ -6,7 +6,7 @@ CadQuery is a Python solid-modeling library. It is a strong default for holes, e
 
 Official [installation guidance](https://cadquery.readthedocs.io/en/latest/installation.html) supports isolated Python or conda environments. Check supported Python/OS packages before installing; compiled dependencies can lag new Python releases. Keep a working environment pinned and trial upgrades separately.
 
-Jonathan's September 2026 installation uses Python 3.12.9, CadQuery 2.8.0, OCP 7.9.3.1.1 and trimesh 5.1.0. From the configured workspace, its wrapper runs a script without changing its working directory:
+Tested on macOS arm64 in September 2026: Python 3.12.9, CadQuery 2.8.0, OCP 7.9.3.1.1 and trimesh 5.1.0. From the configured workspace, its wrapper runs a script without changing its working directory:
 
 ```sh
 "Shared Tools/cadquery/cq-python" path/to/build.py
@@ -16,10 +16,20 @@ For a fresh environment with `uv` already available, the validated installation 
 
 ```sh
 uv venv --python 3.12 "Shared Tools/cadquery/.venv"
-uv pip install --python "Shared Tools/cadquery/.venv/bin/python" cadquery trimesh
+uv pip install --python "Shared Tools/cadquery/.venv/bin/python" cadquery==2.8.0 trimesh==5.1.0 numpy
 ```
 
 These paths reflect the configured workspace; adapt them to your OS. Record resolved package versions after installation. The local tool folder contains a full lockfile and README. Do not assume the public skill includes that machine's runtime. Standard `venv`/pip or conda is also suitable when supported.
+
+## Verify a first-time installation
+
+The complete skill includes [verify_cadquery.py](../scripts/verify_cadquery.py), the same executable tryout used to check Jonathan's installation. It requires CadQuery, numpy and trimesh in the selected environment. Run it with that environment's Python and an explicit project output folder:
+
+```sh
+python /path/to/lej-3d-workshop/scripts/verify_cadquery.py --output-dir /path/to/Projects/cadquery-tryout
+```
+
+Read the generated report, exports and previews. It checks dimensional intent, valid solids, parameter changes, mesh and STEP round trips, and package structure. It writes a new timestamped subfolder inside the requested output tree, preserving earlier runs. It does not slice, connect to a printer or prove physical fit. Independently inspect the exports in your slicer before a print-ready handoff.
 
 ## Useful handles
 

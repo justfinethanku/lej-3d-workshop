@@ -16,17 +16,21 @@ Keep configuration nonsecret: tool locations, hardware, preferences, and referen
 <!-- USER_CONFIG_START -->
 ## User config — edit this section for your workshop
 
-- Owner/example setup: Jonathan Edwards; macOS interactive workstation.
-- Workspace: `~/AUTOMATION/3D Prints`; projects under `Projects/`, reusable local tools under `Shared Tools/`.
-- Primary printer: Bambu Lab H2C. New-project nozzle default: 0.4 mm; choose another when detail, strength, or material warrants it.
-- Slicer: Bambu Studio, matching H2C profile. Verify the installed profile's current printable envelope and hardware before final slicing.
-- Multicolor: available; keep named material bodies easy to remap. Loaded colors, AMS layout, plate, installed nozzle, and remaining material are unknown until observed.
-- Modeling: CadQuery for dimensional solid geometry; Blender for mesh, terrain, organic form, detail and visual presentation; combine freely. Existing helper: `Shared Tools/blender-cli`. CadQuery setup: `Shared Tools/cadquery/` (inspect its README for this installation's commands).
-- Project defaults: millimeters, preserved editable source, reproducible build scripts when helpful; substantial projects use the organization below. Prefer support-free orientation when it suits the design.
-- Inventory/library: LEJ Workshop at `https://www.limitededitionjonathan.com/print-inventory` and `/print-library`. Public APIs: `/api/print-inventory` and `/api/print-filament` on that host. Fleet is Jonathan's canonical inventory and preservation service; other users may substitute their own catalog or local records.
-- Fleet access, when enrolled: discover resources using `fleet resources` / `fleet resource`; credentials only through `fleet get`. No LAN access assumed. Local CSV/Numbers exports are historical snapshots.
-- Communication: plain language; concise updates; distinguish measured facts, assumptions, software validation, and physically inspected results. Questions and planning requests are not authorization to change files or publish.
-- Configuration provenance: initial public setup supplied by Jonathan, September 2026. Refresh drift-prone hardware/software facts during use; add the adapting user's distinctions here.
+These labeled fields are editable and extensible, not a fixed schema or allowed-values list. Add distinctions that help your AI work.
+
+- `owner`: Jonathan Edwards; macOS interactive workstation.
+- `workspace`: `~/AUTOMATION/3D Prints`; projects under `Projects/`, reusable local tools under `Shared Tools/`.
+- `printer`: Bambu Lab H2C.
+- `default_nozzle`: 0.4 mm; choose another when detail, strength, or material warrants it.
+- `slicer`: Bambu Studio, matching H2C profile. Verify the installed profile's current printable envelope and hardware before final slicing.
+- `multicolor`: available; keep named material bodies easy to remap. Loaded colors, AMS layout, plate, installed nozzle, and remaining material are unknown until observed.
+- `modeling_tools`: CadQuery for dimensional solid geometry; Blender for mesh, terrain, organic form, detail and visual presentation; combine freely. Existing helper: `Shared Tools/blender-cli`. CadQuery setup: `Shared Tools/cadquery/` (inspect its README for this installation's commands).
+- `project_defaults`: millimeters, preserved editable source, reproducible build scripts when helpful; substantial projects use the organization below. Prefer support-free orientation when it suits the design.
+- `material_source`: LEJ public API and owner Fleet inventory. Other options include your API, spreadsheet, local notes, none, or a custom source; identify its location and authority here.
+- `inventory_library`: LEJ Workshop at `https://www.limitededitionjonathan.com/print-inventory` and `/print-library`. Public APIs: `/api/print-inventory` and `/api/print-filament` on that host. Fleet is Jonathan's canonical inventory and preservation service; other users may substitute their own catalog or local records.
+- `fleet_access` (when enrolled): discover resources using `fleet resources` / `fleet resource`; credentials only through `fleet get`. No LAN access assumed. Local CSV/Numbers exports are historical snapshots.
+- `communication`: plain language; concise updates; distinguish measured facts, assumptions, software validation, and physically inspected results. Questions and planning requests are not authorization to change files or publish.
+- `config_provenance`: initial public setup supplied by Jonathan, September 2026. Refresh drift-prone hardware/software facts during use; add the adapting user's distinctions here.
 <!-- USER_CONFIG_END -->
 
 ## Choose only the guidance needed now
