@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Reject symlinked release inputs and output paths before packaging, preventing
+  outside files from entering the ZIP or being overwritten by release artifacts.
+- Run isolated packaging boundary and deterministic archive tests in CI.
+
 ## 0.1.0 — 2026-09-06
 
 - Initial public/personal LEJ 3D Workshop skill with one embedded editable user configuration.
