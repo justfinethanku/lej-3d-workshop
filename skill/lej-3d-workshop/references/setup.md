@@ -4,6 +4,41 @@ Install the complete `lej-3d-workshop` folder, including references, in your age
 
 Ask your AI: “Read LEJ 3D Workshop, inspect my available tools, and adapt its User config section to my printer and workspace. Keep useful defaults; ask about consequential unknowns.” The configuration lives inside SKILL.md. There is no private edition or separate configuration product. A different user can use just CadQuery, just Blender, or the material guidance without installing Fleet or owning an H2C.
 
+## Verify and extract a release
+
+On Linux or macOS, use a new download directory with `curl`, `unzip`, and a
+SHA-256 checker installed. The example selects v0.1.0; choose a reviewed version
+from [GitHub Releases](https://github.com/justfinethanku/lej-3d-workshop/releases)
+and download both assets from that same release.
+
+```sh
+mkdir workshop-download
+cd workshop-download
+VERSION=0.1.0
+curl --fail --location --output "lej-3d-workshop-v${VERSION}.zip" "https://github.com/justfinethanku/lej-3d-workshop/releases/download/v${VERSION}/lej-3d-workshop-v${VERSION}.zip"
+curl --fail --location --output SHA256SUMS "https://github.com/justfinethanku/lej-3d-workshop/releases/download/v${VERSION}/SHA256SUMS"
+sha256sum -c SHA256SUMS
+```
+
+On macOS, replace the last command with `shasum -a 256 -c SHA256SUMS`.
+Continue only when it prints the ZIP filename followed by `OK`; a nonzero exit
+or `FAILED` means the bytes do not match. Re-download both assets from the
+selected release and check again. A checksum verifies consistency with the
+published checksum file, not independent publisher identity.
+
+Extract the verified archive into a fresh staging directory:
+
+```sh
+unzip "lej-3d-workshop-v${VERSION}.zip" -d extracted
+```
+
+The installable folder is `extracted/lej-3d-workshop/`. It contains `SKILL.md`,
+`README.md`, `references/`, `scripts/`, `LICENSE`, and `VERSION`. Move that whole
+folder to your chosen skills directory. For an existing installation, follow
+[Updating your copy](#updating-your-copy) before replacing files. The examples
+use POSIX shell syntax; on Windows, use your archive/checksum tools and the
+same folder layout.
+
 ## First-time software setup
 
 Inspect the OS/architecture and installed tools before choosing packages. Use official installers or package distributions, record versions, and keep each CAD Python environment isolated. Install the smallest useful stack: a modeling tool, a compatible slicer, and a way to inspect output. Optional viewers are optional. Avoid modifying system Python or unrelated shell/profile configuration.

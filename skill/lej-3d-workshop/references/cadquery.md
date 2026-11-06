@@ -12,26 +12,72 @@ Tested on macOS arm64 in September 2026: Python 3.12.9, CadQuery 2.8.0, OCP 7.9.
 "Shared Tools/cadquery/cq-python" path/to/build.py
 ```
 
-For a fresh environment with `uv` already available, the validated installation pattern is:
+For a fresh environment, install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+first if needed. Run these commands **from your workshop workspace**, not from
+the installed skill directory. `Shared Tools/cadquery/` is created relative to
+the current directory. This Python 3.12 stack was also exercised on Linux arm64
+on November 6, 2026:
 
 ```sh
 uv venv --python 3.12 "Shared Tools/cadquery/.venv"
-uv pip install --python "Shared Tools/cadquery/.venv/bin/python" cadquery==2.8.0 trimesh==5.1.0 numpy
+uv pip install --python "Shared Tools/cadquery/.venv/bin/python" cadquery==2.8.0 cadquery-ocp==7.9.3.1.1 trimesh==5.1.0 numpy==2.5.4
 ```
 
-These are the versions validated together on macOS arm64; newer releases may work, but test them before replacing a working environment. Standard `venv`/pip or conda is also fine. On Windows the environment's interpreter is `.venv\Scripts\python.exe`. Always run scripts with the environment's own interpreter rather than a bare `python`, which may resolve to a different installation. Record resolved package versions after installation. Jonathan's tool folder keeps a full lockfile and README; the public skill does not include that runtime.
+These direct pins identify the tested stack; transitive packages still resolve at install time. Trial newer releases in a separate environment. Standard `venv`/pip or conda is also fine. On Windows the environment's interpreter is `.venv\Scripts\python.exe`. Always run scripts with the environment's own interpreter rather than a bare `python`, which may resolve to a different installation. Record resolved package versions after installation:
+
+```sh
+uv pip freeze --python "Shared Tools/cadquery/.venv/bin/python" > "Shared Tools/cadquery/resolved-requirements.txt"
+```
+
+Jonathan's tool folder keeps a full lockfile and README; the public skill does
+not include that runtime or his `cq-python` wrapper. Use the environment's
+interpreter directly on a fresh installation. If no compatible wheel is
+available, consult the official installation guidance for a supported runtime
+or conda environment; do not replace an existing working environment to trial it.
 
 ## Verify a first-time installation
 
 The complete skill includes [verify_cadquery.py](../scripts/verify_cadquery.py), the same executable tryout used to check Jonathan's installation. It requires CadQuery, numpy and trimesh in the selected environment. Run it with that environment's own Python and an explicit project output folder:
 
 ```sh
-"Shared Tools/cadquery/.venv/bin/python" /path/to/lej-3d-workshop/scripts/verify_cadquery.py --output-dir /path/to/Projects/cadquery-tryout
+"Shared Tools/cadquery/.venv/bin/python" "/path/to/lej-3d-workshop/scripts/verify_cadquery.py" --output-dir "Projects/cadquery-tryout"
 ```
 
-On Windows substitute `.venv\Scripts\python.exe`. Jonathan's `Shared Tools/cadquery/cq-python` wrapper is the same interpreter on his machine.
+Replace `/path/to/lej-3d-workshop` with the installed skill's absolute path.
+Run from the same workshop workspace used for installation; the relative output
+path creates `Projects/cadquery-tryout/` there. On Windows substitute `.venv\Scripts\python.exe`. Jonathan's `Shared Tools/cadquery/cq-python` wrapper is the same interpreter on his machine.
 
 Read the generated report, exports and previews. It checks dimensional intent, valid solids, parameter changes, mesh and STEP round trips, and package structure. It writes a new timestamped subfolder inside the requested output tree, preserving earlier runs. It does not slice, connect to a printer or prove physical fit. Independently inspect the exports in your slicer before a print-ready handoff.
+
+A successful run exits zero and prints JSON with `status: "passed"`,
+`checks: 29`, and the absolute `output` directory. That timestamped directory
+contains `validation.json` and 16 exports. Inspect the report's `checks`,
+`versions`, and `files` entries for individual results and export checksums.
+The report does not include its own checksum.
+
+### Diagnose a failed run
+
+A nonzero exit means verification did not complete successfully. In the current
+source, startup and geometry failures retain a `validation.json` with
+`status: "failed"` and an `error`; inspect the traceback as well. Startup failure
+reporting and dependency-free `--help` are changes after v0.1.0; that published
+release can fail before creating a report. Check the repository's changelog
+and your bundle's `VERSION` when comparing behavior.
+
+- For `No module named 'cadquery'`, `numpy`, or `trimesh`, confirm you invoked
+  the selected environment's Python, then repeat the installation command for
+  that environment. Installing packages into a different Python does not help.
+- For missing `cadquery-ocp` metadata or a compiled-library load error, retain
+  the traceback and resolved versions. Try the pinned stack in a new isolated
+  environment and re-run verification before replacing the old runtime.
+- For a failed geometry check, inspect its recorded measurements and partial
+  exports. Keep the failed run for comparison; fixing the cause and re-running
+  creates a separate timestamped run.
+
+For cleanup, remove only the generated run directories you no longer need.
+Keep source models and reports you want to preserve. Removing the isolated
+`Shared Tools/cadquery/.venv/` reclaims the runtime; recreate it with the install
+commands when needed.
 
 ## Useful handles
 
