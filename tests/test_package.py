@@ -35,19 +35,13 @@ class PackageTests(unittest.TestCase):
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
-        self.original_root, self.original_skill = package.ROOT, package.SKILL
-        package.ROOT, package.SKILL = self.root, self.skill
-        self.addCleanup(self.restore_paths)
         self.outside = Path(self.temp.name) / 'outside.txt'
         self.outside.write_bytes(b'Nonsecret outside-tree control\n')
         self.original_outside = self.outside.read_bytes()
 
-    def restore_paths(self):
-        package.ROOT, package.SKILL = self.original_root, self.original_skill
-
     def build(self):
         with contextlib.redirect_stdout(io.StringIO()):
-            package.build()
+            package.build(self.root)
         return self.root / 'dist/lej-3d-workshop-v0.1.0.zip'
 
     def test_complete_deterministic_archive_and_checksum(self):
@@ -70,6 +64,38 @@ class PackageTests(unittest.TestCase):
             (archive.parent / 'SHA256SUMS').read_text(),
             f'{hashlib.sha256(first).hexdigest()}  {archive.name}\n')
         self.assertEqual(self.build().read_bytes(), first)
+
+    def test_links_resolve_against_complete_installed_release(self):
+        (self.skill / 'README.md').write_text('[License](LICENSE) [Version](VERSION)\n')
+        (self.skill / 'references/setup.md').write_text(
+            '[License](../LICENSE#terms) [Entry](../SKILL.md)\n')
+        archive = self.build()
+        with zipfile.ZipFile(archive) as bundle:
+            self.assertEqual(bundle.read('lej-3d-workshop/LICENSE'), self.files['LICENSE'])
+            self.assertEqual(bundle.read('lej-3d-workshop/VERSION'), self.files['VERSION'])
+
+    def test_duplicate_metadata_paths_fail_without_silently_replacing_bytes(self):
+        for name in ('LICENSE', 'VERSION'):
+            with self.subTest(name=name):
+                duplicate = self.skill / name
+                duplicate.write_bytes(b'Distinct maintained skill bytes\n')
+                try:
+                    with self.assertRaisesRegex(ValueError, 'Duplicate release path'):
+                        self.build()
+                    self.assertFalse((self.root / 'dist').exists())
+                    self.assertEqual(duplicate.read_bytes(), b'Distinct maintained skill bytes\n')
+                finally:
+                    duplicate.unlink()
+
+    def test_missing_excluded_and_outside_links_fail_before_writing(self):
+        excluded = self.skill / '.private'
+        excluded.write_bytes(b'Not distributable\n')
+        for target in ('missing.md', '.private', '../../outside.txt', '/LICENSE'):
+            with self.subTest(target=target):
+                (self.skill / 'README.md').write_text(f'[Invalid]({target})\n')
+                with self.assertRaisesRegex(ValueError, 'Linked file is missing or not packaged'):
+                    self.build()
+                self.assertFalse((self.root / 'dist').exists())
 
     def test_symlinked_input_files_fail_before_creating_artifacts(self):
         for name in self.files:

@@ -2,64 +2,73 @@
 """Validate and build the complete public skill archive (standard library only)."""
 from pathlib import Path
 import hashlib
+import posixpath
 import re
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL = ROOT / 'skill' / 'lej-3d-workshop'
 EXCLUDED_DIRS = {'__pycache__', 'cadquery-verification'}
 
 
-def reject_symlinks(path):
+def reject_symlinks(path, root):
     """Check each component before reading inputs or writing release artifacts."""
-    relative = path.relative_to(ROOT)
-    current = ROOT
+    relative = path.relative_to(root)
+    current = root
     for part in relative.parts:
         current = current / part
         if current.is_symlink():
             raise ValueError(f'Symlink is not a portable package path: {current}')
 
 
-def build():
-    for path in (ROOT / 'VERSION', ROOT / 'LICENSE', SKILL / 'SKILL.md'):
-        reject_symlinks(path)
-    version = (ROOT / 'VERSION').read_text().strip()
+def collect_content(root):
+    """Snapshot the complete release once, keyed by its installed relative paths."""
+    skill = root / 'skill' / 'lej-3d-workshop'
+    for path in (root / 'VERSION', root / 'LICENSE', skill / 'SKILL.md'):
+        reject_symlinks(path, root)
+    content = {name: (root / name).read_bytes() for name in ('LICENSE', 'VERSION')}
+    version = content['VERSION'].decode().strip()
     if not re.fullmatch(r'\d+\.\d+\.\d+', version):
         raise ValueError('VERSION must be a numeric semantic version')
-    entry = (SKILL / 'SKILL.md').read_text()
+    # Package every maintained file in the skill folder. Hidden files, caches and
+    # generated verification runs are never distributable.
+    skill_files = 0
+    for source in sorted(skill.rglob('*')):
+        if source.suffix == '.pyc' or any(
+                part.startswith('.') or part in EXCLUDED_DIRS
+                for part in source.relative_to(skill).parts):
+            continue
+        reject_symlinks(source, root)
+        if source.is_file():
+            name = source.relative_to(skill).as_posix()
+            if name in content:
+                raise ValueError(f'Duplicate release path: {name}; keep release metadata at the repository root')
+            content[name] = source.read_bytes()
+            skill_files += 1
+    entry = content['SKILL.md'].decode('utf-8')
     for marker in ('<!-- USER_CONFIG_START -->', '<!-- USER_CONFIG_END -->'):
         if entry.count(marker) != 1:
             raise ValueError(f'Expected exactly one {marker}')
     if entry.index('<!-- USER_CONFIG_START -->') > entry.index('<!-- USER_CONFIG_END -->'):
         raise ValueError('User config markers are reversed')
-    # Package every maintained file in the skill folder. Hidden files, caches and
-    # generated verification runs are never distributable.
-    sources = []
-    for source in sorted(SKILL.rglob('*')):
-        if source.suffix == '.pyc' or any(
-                part.startswith('.') or part in EXCLUDED_DIRS
-                for part in source.relative_to(SKILL).parts):
-            continue
-        reject_symlinks(source)
-        if source.is_file():
-            sources.append(source)
-    packaged = {p.resolve() for p in sources}
-    for source in sources:
-        if source.suffix == '.md':
-            for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', source.read_text()):
+    for name, data in content.items():
+        if name.endswith('.md'):
+            for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', data.decode('utf-8')):
                 if target.startswith(('https://', 'http://', '#', 'mailto:')):
                     continue
-                destination = (source.parent / target.split('#')[0]).resolve()
-                if destination not in packaged:
-                    raise ValueError(f'Linked file is missing or not packaged: {source}: {target}')
-    content = {f'lej-3d-workshop/{p.relative_to(SKILL).as_posix()}': p.read_bytes() for p in sources}
-    for name in ('LICENSE', 'VERSION'):
-        content[f'lej-3d-workshop/{name}'] = (ROOT / name).read_bytes()
-    output = ROOT / 'dist'
+                destination = posixpath.normpath(posixpath.join(
+                    posixpath.dirname(name), target.split('#', 1)[0]))
+                if destination not in content:
+                    raise ValueError(f'Linked file is missing or not packaged: {name}: {target}')
+    return version, {f'lej-3d-workshop/{name}': data for name, data in content.items()}, skill_files
+
+
+def build(root=ROOT):
+    version, content, skill_files = collect_content(root)
+    output = root / 'dist'
     archive = output / f'lej-3d-workshop-v{version}.zip'
     checksum_file = output / 'SHA256SUMS'
     for path in (output, archive, checksum_file):
-        reject_symlinks(path)
+        reject_symlinks(path, root)
     output.mkdir(exist_ok=True)
     with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as bundle:
         for name, data in sorted(content.items()):
@@ -75,7 +84,7 @@ def build():
                 raise ValueError(f'Archive content differs: {name}')
     checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
     checksum_file.write_text(f'{checksum}  {archive.name}\n')
-    print(f'Validated {len(sources)} skill files; verified {len(content)} archive entries')
+    print(f'Validated {skill_files} skill files; verified {len(content)} archive entries')
     print(f'{checksum}  {archive.name}')
 
 

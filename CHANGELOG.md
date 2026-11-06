@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Validate links and write archive bytes from one complete release manifest,
+  including the root LICENSE and VERSION. Reject skill files that would collide
+  with those metadata paths instead of silently replacing their contents.
 - Reject symlinked release inputs and output paths before packaging, preventing
   outside files from entering the ZIP or being overwritten by release artifacts.
 - Run isolated packaging boundary and deterministic archive tests in CI.
