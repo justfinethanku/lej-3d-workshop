@@ -22,6 +22,30 @@ reject missing, excluded, and outside-package link targets before writing output
 
 No generated content is written outside ignored `dist/`; delete that directory for cleanup. Do not use production inventory or printer jobs as a documentation smoke test. CadQuery runtime installation and geometry testing are recorded in the configured workspace's cadquery-tryout project and belong to their own validation scope.
 
+## CAD verifier regression tests
+
+The standard-library test command also checks that verifier help works without
+CAD packages and a missing dependency produces a failed `validation.json` report.
+The three real-geometry tests skip when CadQuery, NumPy, or trimesh is absent.
+Install the test environment to run all five verifier tests:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r tests/requirements-cad.txt
+OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 .venv/bin/python -m unittest discover -s tests -v
+```
+
+Use Python 3.12. The pinned direct dependencies were exercised on Linux arm64;
+CI runs the same geometry suite on Linux x86-64. The tests execute the public CLI
+in temporary directories. They verify all 29 checks, all 16 export hashes and
+sizes, the volume change between hole diameters, and preservation of a previous
+run. A second case displaces the real reloaded STL by 100 mm and requires a
+nonzero exit, the failed bounds check, and checksummed partial exports. Another
+case injects missing OCP package metadata and requires a failed report rather
+than an empty run directory. These are software checks; they do not validate a
+slicer profile or physical print. Temporary exports are removed by the tests;
+remove `.venv/` to clean up the installed test environment.
+
 The CAD reference Python example executed successfully in the installed CadQuery 2.8.0 environment, including valid solid, intended width, STEP round-trip validity and volume equality. Example files were temporary and removed from the workspace.
 
-Run the public verifier with the selected CAD Python: `python skill/lej-3d-workshop/scripts/verify_cadquery.py --output-dir /tmp/lej-cadquery-check`. It needs cadquery, numpy and trimesh; writes a timestamped run only under that directory; returns nonzero for failed checks. The promoted script passed all 29 checks on macOS arm64/Python 3.12/CadQuery 2.8.0. Remove only that temporary output for cleanup. The bundle includes every maintained file in the skill folder except hidden files, caches and generated verification runs; a Markdown link to a file that is not packaged fails the build. GitHub Actions (`.github/workflows/package.yml`) runs the packager and a syntax check of the verifier on every push and pull request; it does not install CadQuery.
+Run the public verifier with the selected CAD Python: `python skill/lej-3d-workshop/scripts/verify_cadquery.py --output-dir /tmp/lej-cadquery-check`. It needs cadquery, numpy and trimesh; writes a timestamped run only under that directory; returns nonzero for failed checks. The promoted script passed all 29 checks on macOS arm64/Python 3.12/CadQuery 2.8.0. Remove only that temporary output for cleanup. The bundle includes every maintained file in the skill folder except hidden files, caches and generated verification runs; a Markdown link to a file that is not packaged fails the build. GitHub Actions (`.github/workflows/package.yml`) runs the package checks and a separate CAD verifier job with the pinned test dependencies on every push and pull request.
