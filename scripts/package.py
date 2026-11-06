@@ -2,12 +2,34 @@
 """Validate and build the complete public skill archive (standard library only)."""
 from pathlib import Path
 import hashlib
+import os
 import posixpath
 import re
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED_DIRS = {'__pycache__', 'cadquery-verification'}
+
+
+def excluded_name(name):
+    return name.startswith('.') or name in EXCLUDED_DIRS
+
+
+def skill_sources(skill, root):
+    """Prune generated directories before walking their contents."""
+    for directory, dirs, files in os.walk(skill, followlinks=False):
+        dirs[:] = sorted(name for name in dirs if not excluded_name(name))
+        # os.walk does not descend into directory symlinks, but a maintained
+        # symlink must still fail instead of silently disappearing from release.
+        for name in dirs:
+            if Path(name).suffix != '.pyc':
+                reject_symlinks(Path(directory) / name, root)
+        for name in sorted(files):
+            source = Path(directory) / name
+            if not excluded_name(name) and source.suffix != '.pyc':
+                reject_symlinks(source, root)
+                if source.is_file():
+                    yield source
 
 
 def reject_symlinks(path, root):
@@ -32,18 +54,12 @@ def collect_content(root):
     # Package every maintained file in the skill folder. Hidden files, caches and
     # generated verification runs are never distributable.
     skill_files = 0
-    for source in sorted(skill.rglob('*')):
-        if source.suffix == '.pyc' or any(
-                part.startswith('.') or part in EXCLUDED_DIRS
-                for part in source.relative_to(skill).parts):
-            continue
-        reject_symlinks(source, root)
-        if source.is_file():
-            name = source.relative_to(skill).as_posix()
-            if name in content:
-                raise ValueError(f'Duplicate release path: {name}; keep release metadata at the repository root')
-            content[name] = source.read_bytes()
-            skill_files += 1
+    for source in skill_sources(skill, root):
+        name = source.relative_to(skill).as_posix()
+        if name in content:
+            raise ValueError(f'Duplicate release path: {name}; keep release metadata at the repository root')
+        content[name] = source.read_bytes()
+        skill_files += 1
     entry = content['SKILL.md'].decode('utf-8')
     for marker in ('<!-- USER_CONFIG_START -->', '<!-- USER_CONFIG_END -->'):
         if entry.count(marker) != 1:

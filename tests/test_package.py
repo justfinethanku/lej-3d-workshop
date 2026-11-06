@@ -3,10 +3,12 @@ import contextlib
 import hashlib
 import importlib.util
 import io
+import os
 from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 
@@ -73,6 +75,42 @@ class PackageTests(unittest.TestCase):
         with zipfile.ZipFile(archive) as bundle:
             self.assertEqual(bundle.read('lej-3d-workshop/LICENSE'), self.files['LICENSE'])
             self.assertEqual(bundle.read('lej-3d-workshop/VERSION'), self.files['VERSION'])
+
+    def test_excluded_directories_are_not_enumerated(self):
+        # Checking archive contents alone misses time spent walking local caches
+        # and verification runs which must never contribute release files.
+        original_scandir = os.scandir
+        for relative in ('.venv', '__pycache__', 'cadquery-verification',
+                         'references/.cache', 'references/cadquery-verification'):
+            with self.subTest(directory=relative):
+                excluded = self.skill / relative
+                child = excluded / 'nested/generated.stl'
+                child.parent.mkdir(parents=True)
+                child.write_bytes(b'Excluded synthetic mesh\n')
+                visited = []
+
+                def scandir(path):
+                    visited.append(Path(path))
+                    return original_scandir(path)
+
+                try:
+                    with mock.patch('os.scandir', scandir):
+                        archive = self.build()
+                    self.assertNotIn(excluded, visited)
+                    self.assertIn(self.skill / 'references', visited)
+                    with zipfile.ZipFile(archive) as bundle:
+                        self.assertEqual(len(bundle.namelist()), len(self.files))
+                finally:
+                    shutil.rmtree(excluded)
+
+    def test_deep_maintained_files_survive_pruning(self):
+        relative = 'assets/meshes.pyc/nested/reference.stl'
+        mesh = self.skill / relative
+        mesh.parent.mkdir(parents=True)
+        mesh.write_bytes(b'Maintained synthetic mesh\n')
+        (self.skill / 'README.md').write_text(f'[Mesh]({relative})\n')
+        with zipfile.ZipFile(self.build()) as bundle:
+            self.assertEqual(bundle.read('lej-3d-workshop/' + relative), mesh.read_bytes())
 
     def test_duplicate_metadata_paths_fail_without_silently_replacing_bytes(self):
         for name in ('LICENSE', 'VERSION'):
