@@ -8,7 +8,7 @@ The compact entrypoint routes to setup, CadQuery and Blender workflows, dimensio
 
 Download the complete versioned ZIP from [Releases](https://github.com/justfinethanku/lej-3d-workshop/releases), verify its SHA-256 against that release's SHA256SUMS, and extract it. Place `lej-3d-workshop/` in your agent's skills directory, or ask another agent to read its SKILL.md directly. Keep the references with it. No Python runtime, CAD application, account, or printer connection is bundled.
 
-Try: “Use LEJ 3D Workshop. Inspect my available tools and help adapt the User config section to my setup, then design a small dimensional test part.” Installation/setup is described in [setup](skill/lej-3d-workshop/references/setup.md). Configure only what you use; Fleet is optional.
+Try: “Use LEJ 3D Workshop. Inspect my available tools and help adapt the User config section to my setup, then design a small dimensional test part.” See [setup](skill/lej-3d-workshop/references/setup.md) for executable download, checksum, and extraction steps, then [CAD setup](skill/lej-3d-workshop/references/cadquery.md) for an isolated runtime and a verified first result. Configure only what you use; Fleet is optional.
 
 ## Updates
 
@@ -18,4 +18,4 @@ The [Workshop page](https://www.limitededitionjonathan.com/print-workshop-skill)
 
 ## Development and contributions
 
-See [CONTRIBUTING](CONTRIBUTING.md), [contributors](CONTRIBUTORS.md), [changelog](CHANGELOG.md), and [testing runbook](docs/testing-runbook.md). Build a complete deterministic bundle with `python3 scripts/package.py`; output goes to ignored `dist/`. The packager checks local reference integrity and writes the archive plus SHA256SUMS. MIT licensed; tool dependencies and third-party models retain their own licenses.
+See [CONTRIBUTING](CONTRIBUTING.md), [contributors](CONTRIBUTORS.md), [changelog](CHANGELOG.md), and [testing runbook](docs/testing-runbook.md). From a source checkout, build a complete deterministic bundle with Python 3.12 and `python3 scripts/package.py`; it uses only the standard library and writes to ignored `dist/`. CAD dependencies are needed only for modeling and geometry verification. Source changes under Unreleased are not included in the existing v0.1.0 download. The packager checks local reference integrity and writes the archive plus SHA256SUMS. MIT licensed; tool dependencies and third-party models retain their own licenses.

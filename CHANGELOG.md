@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Document executable release checksum/extraction steps, a tested isolated CAD
+  setup, verifier success/failure results, runtime cleanup, and the distinction
+  between published v0.1.0 and current source behavior.
+
 - Prune hidden folders, caches, and generated verification runs before release
   traversal, so local working files do not slow packaging or inflate its memory
   use. Preserve maintained files and deterministic archive bytes.
