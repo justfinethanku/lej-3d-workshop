@@ -9,16 +9,13 @@ import math
 import platform
 import xml.etree.ElementTree as ET
 import zipfile
-import cadquery as cq
-import numpy as np
-import trimesh
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output-dir', type=Path, default=Path.cwd() / 'cadquery-verification', help='Parent folder for a new timestamped run; existing runs are preserved.')
 args = parser.parse_args()
 OUT = args.output_dir.expanduser().resolve() / datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
 OUT.mkdir(parents=True, exist_ok=False)
-report = {'units': 'mm', 'status': 'running', 'versions': {p: metadata.version(p) for p in ('cadquery', 'cadquery-ocp', 'trimesh')}, 'python': platform.python_version(), 'platform': platform.platform(), 'checks': []}
+report = {'units': 'mm', 'status': 'running', 'versions': {}, 'python': platform.python_version(), 'platform': platform.platform(), 'checks': []}
 
 
 def check(label, passed, **evidence):
@@ -57,6 +54,13 @@ def validate_export(name, part, expected_volume, bounds):
     part.export(str(OUT / (name + '.svg')), opt={'width': 900, 'height': 600, 'projectionDir': (1, -1, 1), 'showAxes': False, 'showHidden': False})
 
 try:
+    # Parse --help before optional imports, and retain startup failures in the
+    # same report as geometry failures (including missing distribution metadata).
+    import cadquery as cq
+    import numpy as np
+    import trimesh
+    for package in ('cadquery', 'cadquery-ocp', 'trimesh'):
+        report['versions'][package] = metadata.version(package)
     for diameter in (6.0, 6.2):
         part = plate(diameter)
         validate_export(f'fit-plate-hole-{diameter:.1f}', part, 40*24*6 - math.pi*(diameter/2)**2*6, [[-20,-12,0],[20,12,6]])

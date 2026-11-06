@@ -1,0 +1,5 @@
+# CPU-only verifier integration environment; Python 3.12.
+cadquery==2.8.0
+cadquery-ocp==7.9.3.1.1
+numpy==2.5.4
+trimesh==5.1.0

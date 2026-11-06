@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Exercise the public CAD verifier with real exports, checksum checks, preserved
+  prior runs, and a displaced-mesh failure in CI. Keep failure reports for
+  missing dependencies or package metadata, and allow help without CAD packages.
 - Validate links and write archive bytes from one complete release manifest,
   including the root LICENSE and VERSION. Reject skill files that would collide
   with those metadata paths instead of silently replacing their contents.
