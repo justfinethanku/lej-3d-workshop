@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Prune hidden folders, caches, and generated verification runs before release
+  traversal, so local working files do not slow packaging or inflate its memory
+  use. Preserve maintained files and deterministic archive bytes.
 - Exercise the public CAD verifier with real exports, checksum checks, preserved
   prior runs, and a displaced-mesh failure in CI. Keep failure reports for
   missing dependencies or package metadata, and allow help without CAD packages.

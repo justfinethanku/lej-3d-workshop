@@ -13,6 +13,10 @@ output paths cannot overwrite files outside the release directory. The fixtures
 use synthetic data and require only the Python standard library. CI runs them
 alongside the packager and verifier syntax check.
 
+Packaging tests also verify that excluded directories are never enumerated,
+including nested hidden caches and generated verification runs. Maintained files
+in deeper directories must still be included and local links must resolve.
+
 Link validation uses the installed release paths, including `LICENSE` and
 `VERSION` copied from the repository root. A skill reference can link to those
 bundled files even though they live outside the skill source directory. Keep
