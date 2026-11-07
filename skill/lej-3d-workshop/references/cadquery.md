@@ -55,6 +55,20 @@ contains `validation.json` and 16 exports. Inspect the report's `checks`,
 `versions`, and `files` entries for individual results and export checksums.
 The report does not include its own checksum.
 
+Current source validates the 3MF fixture's finite coordinates, triangle indices,
+build references/transforms, millimeter units, and built bounds. This is not a
+general-purpose 3MF importer or a manifoldness/conformance check. The known
+generic-3MF topology limitation below still applies.
+
+GLB uses [meters and Y-up coordinates](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#coordinate-system-and-units).
+The current verifier explicitly converts its millimeter models through OCCT's
+writer and checks transformed scene bounds back in CAD millimeters, including
+the pin's placement. CadQuery 2.8's default `Assembly.export()` does not set the
+input length unit for glTF: the old verifier's 40 mm plate spanned 40 meters in
+GLB while local mesh extents still passed. This correction is after v0.1.0.
+The adapter uses CadQuery's internal `toCAF` helper; re-run the geometry suite
+before changing the pinned runtime. STEP and STL remain millimeter fixtures.
+
 ### Diagnose a failed run
 
 A nonzero exit means verification did not complete successfully. In the current

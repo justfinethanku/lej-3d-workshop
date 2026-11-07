@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Reject malformed 3MF mesh indices, nonfinite coordinates, missing/cyclic build
+  references, and incorrect built dimensions. Check GLB scene placement and
+  convert the verifier's millimeter models to glTF meters; CadQuery 2.8's default
+  GLB export made the 40 mm fixture span 40 meters. Retain failed export evidence.
 - Document executable release checksum/extraction steps, a tested isolated CAD
   setup, verifier success/failure results, runtime cleanup, and the distinction
   between published v0.1.0 and current source behavior.
