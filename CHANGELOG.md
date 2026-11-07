@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Isolate each CAD verification run's report and exports. Loading geometry
+  helpers no longer parses host arguments, creates directories, or runs CAD;
+  CLI checks and failed-run evidence remain unchanged.
+
 - Reject malformed 3MF mesh indices, nonfinite coordinates, missing/cyclic build
   references, and incorrect built dimensions. Check GLB scene placement and
   convert the verifier's millimeter models to glTF meters; CadQuery 2.8's default

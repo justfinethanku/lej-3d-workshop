@@ -31,7 +31,7 @@ The packager writes only to ignored `dist/`; remove that directory to clean up i
 The standard-library test command also checks that verifier help works without
 CAD packages and a missing dependency produces a failed `validation.json` report.
 The real-geometry tests skip when CadQuery, NumPy, or trimesh is absent.
-Install the test environment to run all nine verifier tests:
+Install the test environment to run all eleven verifier tests:
 
 ```sh
 python3 -m venv .venv
@@ -49,6 +49,11 @@ case injects missing OCP package metadata and requires a failed report rather
 than an empty run directory. These are software checks; they do not validate a
 slicer profile or physical print. Temporary exports are removed by the tests;
 remove `.venv/` to clean up the installed test environment.
+
+Module loading is also tested without site-packages and with unrelated host
+arguments: it must create no files or output. A real CAD success/failure/success
+sequence in one Python process checks that reports, checksums, and exports stay
+with their own run and that recovery preserves the first run's bytes.
 
 The geometry suite also corrupts real 3MF exports with scaled coordinates,
 invalid triangle indices, nonfinite values, wrong units, and missing or cyclic
