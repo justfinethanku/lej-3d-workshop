@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Reuse validated 3MF mesh resources within each bounds check and reduce each
+  transformed instance immediately, avoiding repeated mesh parsing and retained
+  copies for repeated build instances. Preserve exact transformed bounds and
+  revalidate replaced archives on every call.
+
 - Record interrupted CAD verification as failed while propagating cancellation.
   Test cancelled startup and STEP imports, preserved partial evidence, successful
   recovery, repeated GLB exports after interruption, and STEP scale rejection.
