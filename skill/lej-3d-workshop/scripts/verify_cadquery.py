@@ -38,6 +38,10 @@ def three_mf_bounds(path):
             matrix[:3, :] = np.array(values).reshape(4, 3).T
         return matrix
 
+    # Mesh coordinates/indices belong to a resource, not to each instance.
+    # Keep this cache local so a replaced archive is always revalidated.
+    mesh_vertices = {}
+
     def vertices_for(object_id, matrix, ancestors):
         if object_id in ancestors or object_id not in resources:
             raise ValueError('3MF cyclic or missing object reference')
@@ -45,36 +49,44 @@ def three_mf_bounds(path):
         mesh = obj.find('m:mesh', ns)
         components = obj.findall('m:components/m:component', ns)
         if mesh is not None and not components:
-            vertices = np.array([[float(v.attrib[a]) for a in ('x', 'y', 'z')]
-                                 for v in mesh.findall('m:vertices/m:vertex', ns)])
-            triangles = [[int(t.attrib[a]) for a in ('v1', 'v2', 'v3')]
-                         for t in mesh.findall('m:triangles/m:triangle', ns)]
-            if not len(vertices) or not np.isfinite(vertices).all() or not triangles:
-                raise ValueError('3MF empty mesh or nonfinite coordinate')
-            if any(len(set(t)) != 3 or min(t) < 0 or max(t) >= len(vertices)
-                   for t in triangles):
-                raise ValueError('3MF invalid triangle indices')
-            return [trimesh.transform_points(vertices, matrix)]
+            if object_id not in mesh_vertices:
+                vertices = np.array([[float(v.attrib[a]) for a in ('x', 'y', 'z')]
+                                     for v in mesh.findall('m:vertices/m:vertex', ns)])
+                triangles = [[int(t.attrib[a]) for a in ('v1', 'v2', 'v3')]
+                             for t in mesh.findall('m:triangles/m:triangle', ns)]
+                if not len(vertices) or not np.isfinite(vertices).all() or not triangles:
+                    raise ValueError('3MF empty mesh or nonfinite coordinate')
+                if any(len(set(t)) != 3 or min(t) < 0 or max(t) >= len(vertices)
+                       for t in triangles):
+                    raise ValueError('3MF invalid triangle indices')
+                mesh_vertices[object_id] = vertices
+            yield trimesh.transform_points(mesh_vertices[object_id], matrix)
+            return
         if not components or mesh is not None:
             raise ValueError('3MF object must contain mesh or components')
-        points = []
         for component in components:
             if any(key.endswith('path') for key in component.attrib):
                 raise ValueError('3MF external component is outside this fixture')
-            points.extend(vertices_for(component.attrib['objectid'],
-                                       matrix @ transform(component),
-                                       ancestors | {object_id}))
-        return points
+            yield from vertices_for(component.attrib['objectid'],
+                                    matrix @ transform(component),
+                                    ancestors | {object_id})
 
-    points = []
+    bounds = None
     for item in model.findall('m:build/m:item', ns):
-        points.extend(vertices_for(item.attrib['objectid'], transform(item), set()))
-    if not points:
+        for vertices in vertices_for(item.attrib['objectid'], transform(item), set()):
+            if not np.isfinite(vertices).all():
+                raise ValueError('3MF nonfinite built coordinate')
+            # Reduce each instance immediately instead of retaining and then
+            # concatenating every transformed vertex array in the build.
+            low, high = vertices.min(axis=0), vertices.max(axis=0)
+            if bounds is None:
+                bounds = np.array([low, high])
+            else:
+                bounds[0] = np.minimum(bounds[0], low)
+                bounds[1] = np.maximum(bounds[1], high)
+    if bounds is None:
         raise ValueError('3MF empty build')
-    vertices = np.concatenate(points)
-    if not np.isfinite(vertices).all():
-        raise ValueError('3MF nonfinite built coordinate')
-    return np.array([vertices.min(axis=0), vertices.max(axis=0)])
+    return bounds
 
 
 def export_glb_mm(assembly, path):

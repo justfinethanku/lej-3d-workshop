@@ -31,7 +31,7 @@ The packager writes only to ignored `dist/`; remove that directory to clean up i
 The standard-library test command also checks that verifier help works without
 CAD packages and a missing dependency produces a failed `validation.json` report.
 The real-geometry tests skip when CadQuery, NumPy, or trimesh is absent.
-Install the test environment to run all fifteen verifier tests:
+Install the test environment to run the full CAD and mesh test suite:
 
 ```sh
 python3 -m venv .venv
@@ -66,6 +66,14 @@ import scaled by 25.4 must fail before STL or subsequent exports begin.
 These checks cover cancellation raised inside the verification body. Forced
 process termination or interruption while writing the final report can prevent
 a complete report; they are not covered by this recovery guarantee.
+
+The mesh tests exercise repeated 3MF build/component instances, including nested
+placements and rotations of an asymmetric mesh. They check exact built bounds
+while requiring transformed vertex arrays to be released as instances are
+processed. Replacing an archive between calls must revalidate its geometry;
+failed retries, missing references, cycles, and nonfinite transforms must still
+fail. Mesh data is cached only within a call, and each instance still transforms
+its actual vertices; this does not approximate rotated bounds from a box.
 
 The geometry suite also corrupts real 3MF exports with scaled coordinates,
 invalid triangle indices, nonfinite values, wrong units, and missing or cyclic
