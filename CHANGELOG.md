@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Document interrupted export diagnosis, retained-file checksum inspection,
+  unit/scale rejection and separate-run recovery. Distinguish failed runs with
+  no failed check from successful verification and identify source-built bundles
+  beyond their unchanged version number.
+
 - Reuse validated 3MF mesh resources within each bounds check and reduce each
   transformed instance immediately, avoiding repeated mesh parsing and retained
   copies for repeated build instances. Preserve exact transformed bounds and
