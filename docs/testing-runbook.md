@@ -30,8 +30,8 @@ The packager writes only to ignored `dist/`; remove that directory to clean up i
 
 The standard-library test command also checks that verifier help works without
 CAD packages and a missing dependency produces a failed `validation.json` report.
-The three real-geometry tests skip when CadQuery, NumPy, or trimesh is absent.
-Install the test environment to run all five verifier tests:
+The real-geometry tests skip when CadQuery, NumPy, or trimesh is absent.
+Install the test environment to run all nine verifier tests:
 
 ```sh
 python3 -m venv .venv
@@ -49,6 +49,13 @@ case injects missing OCP package metadata and requires a failed report rather
 than an empty run directory. These are software checks; they do not validate a
 slicer profile or physical print. Temporary exports are removed by the tests;
 remove `.venv/` to clean up the installed test environment.
+
+The geometry suite also corrupts real 3MF exports with scaled coordinates,
+invalid triangle indices, nonfinite values, wrong units, and missing or cyclic
+build references. It changes GLB scene scale and pin placement and independently
+checks that the 40 mm plate spans 0.04 meters in the exported GLB. Each corrupted
+case must fail, retain checksummed partial files, and stop subsequent exports.
+Exporter exceptions and a false GLB writer result must also retain failed reports.
 
 The CAD reference Python example executed successfully in the installed CadQuery 2.8.0 environment, including valid solid, intended width, STEP round-trip validity and volume equality. Example files were temporary and removed from the workspace.
 
