@@ -31,7 +31,7 @@ The packager writes only to ignored `dist/`; remove that directory to clean up i
 The standard-library test command also checks that verifier help works without
 CAD packages and a missing dependency produces a failed `validation.json` report.
 The real-geometry tests skip when CadQuery, NumPy, or trimesh is absent.
-Install the test environment to run all eleven verifier tests:
+Install the test environment to run all fifteen verifier tests:
 
 ```sh
 python3 -m venv .venv
@@ -54,6 +54,18 @@ Module loading is also tested without site-packages and with unrelated host
 arguments: it must create no files or output. A real CAD success/failure/success
 sequence in one Python process checks that reports, checksums, and exports stay
 with their own run and that recovery preserves the first run's bytes.
+
+Cancellation tests interrupt dependency loading and real STEP imports. They
+require a terminal failed report, checksummed partial STEP evidence, propagation
+of the original `KeyboardInterrupt` or `SystemExit`, and a successful later run
+that preserves earlier evidence. A separate GLB writer interruption checks that
+the same assembly can be exported repeatedly, including across an unrelated
+export, without accumulating a rotation or changing its meter scale. A real STEP
+import scaled by 25.4 must fail before STL or subsequent exports begin.
+
+These checks cover cancellation raised inside the verification body. Forced
+process termination or interruption while writing the final report can prevent
+a complete report; they are not covered by this recovery guarantee.
 
 The geometry suite also corrupts real 3MF exports with scaled coordinates,
 invalid triangle indices, nonfinite values, wrong units, and missing or cyclic

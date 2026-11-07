@@ -198,9 +198,11 @@ def verify(output_dir):
         tray.val().exportStl(str(out / 'rounded-tray.stl'), tolerance=0.01, relative=False)
         check('shell fillet mesh watertight', trimesh.load_mesh(out / 'rounded-tray.stl').is_watertight)
         report['status'] = 'passed'
-    except Exception as error:
+    except BaseException as error:
+        # Cancellation must leave terminal evidence too. Re-raise the original
+        # exception so KeyboardInterrupt/SystemExit still stop the caller.
         report['status'] = 'failed'
-        report['error'] = str(error)
+        report['error'] = str(error) or type(error).__name__
         raise
     finally:
         report['files'] = [{'name': p.name, 'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(out.iterdir()) if p.is_file()]
