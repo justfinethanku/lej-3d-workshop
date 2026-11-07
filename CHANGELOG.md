@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Record interrupted CAD verification as failed while propagating cancellation.
+  Test cancelled startup and STEP imports, preserved partial evidence, successful
+  recovery, repeated GLB exports after interruption, and STEP scale rejection.
+
 - Isolate each CAD verification run's report and exports. Loading geometry
   helpers no longer parses host arguments, creates directories, or runs CAD;
   CLI checks and failed-run evidence remain unchanged.

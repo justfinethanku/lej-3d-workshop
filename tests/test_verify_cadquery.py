@@ -79,6 +79,24 @@ class VerifierCLI(VerifierBase):
                 self.assertEqual(result.stderr, '')
                 self.assertEqual(list(self.cwd.iterdir()), [])
 
+    def test_cancelled_startup_records_terminal_failure_and_propagates(self):
+        result = self.invoke('--output-dir', 'runs', prelude="""
+import builtins
+original_import = builtins.__import__
+def cancelled_import(name, *args, **kwargs):
+    if name == 'cadquery':
+        raise KeyboardInterrupt()
+    return original_import(name, *args, **kwargs)
+builtins.__import__ = cancelled_import
+""")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('KeyboardInterrupt', result.stderr)
+        _, report = self.read_report(result)
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(report['error'], 'KeyboardInterrupt')
+        self.assertEqual(report['checks'], [])
+        self.assertEqual(report['files'], [])
+
     def test_missing_dependency_records_failed_run(self):
         # -S disables site-packages even in a CAD-enabled environment.
         result = self.invoke('--output-dir', 'runs', without_packages=True)
@@ -134,6 +152,114 @@ class VerifierGeometry(VerifierBase):
                 data = (run / entry['name']).read_bytes()
                 self.assertEqual(entry['bytes'], len(data))
                 self.assertEqual(entry['sha256'], hashlib.sha256(data).hexdigest())
+
+    def test_interrupted_step_import_then_success_preserves_evidence(self):
+        import contextlib
+        import io
+        import runpy
+        from unittest import mock
+        import cadquery as cq
+
+        verify = runpy.run_path(str(SCRIPT))['verify']
+        parent = self.cwd / 'runs'
+        # The importer really reads the on-disk STEP before cancellation.
+        original_import = cq.importers.importStep
+        for cancellation in (KeyboardInterrupt(), SystemExit(9)):
+            with self.subTest(cancellation=type(cancellation).__name__):
+                def interrupted_import(path):
+                    imported = original_import(path)
+                    self.assertTrue(imported.val().isValid())
+                    raise cancellation
+
+                saved = {str(p.relative_to(parent)): p.read_bytes()
+                         for p in parent.rglob('*') if p.is_file()}
+                previous = set(parent.iterdir()) if parent.exists() else set()
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with mock.patch.object(cq.importers, 'importStep', interrupted_import):
+                        with self.assertRaises(type(cancellation)) as raised:
+                            verify(parent)
+                    self.assertIs(raised.exception, cancellation)
+                    failed, = set(parent.iterdir()) - previous
+                    report = json.loads((failed / 'validation.json').read_text())
+                    self.assertEqual(report['status'], 'failed')
+                    self.assertEqual(report['error'], str(cancellation) or
+                                     type(cancellation).__name__)
+                    self.assertEqual(len(report['checks']), 3)
+                    self.assertTrue(all(c['passed'] for c in report['checks']))
+                    self.assertEqual([f['name'] for f in report['files']],
+                                     ['fit-plate-hole-6.0.step'])
+                    step = (failed / report['files'][0]['name']).read_bytes()
+                    self.assertEqual(report['files'][0]['bytes'], len(step))
+                    self.assertEqual(report['files'][0]['sha256'],
+                                     hashlib.sha256(step).hexdigest())
+                    failed_bytes = {p.name: p.read_bytes() for p in failed.iterdir()}
+                    recovered = verify(parent)
+                recovered_report = json.loads((recovered / 'validation.json').read_text())
+                self.assertEqual(recovered_report['status'], 'passed')
+                self.assertEqual(len(recovered_report['checks']), 29)
+                self.assertEqual(len(recovered_report['files']), 16)
+                self.assertEqual({p.name: p.read_bytes() for p in failed.iterdir()}, failed_bytes)
+                self.assertEqual({name: (parent / name).read_bytes() for name in saved}, saved)
+
+    def test_glb_cancellation_restores_assembly_for_repeated_exports(self):
+        import runpy
+        from unittest import mock
+        import cadquery as cq
+        import numpy as np
+        import trimesh
+        import OCP.RWGltf as gltf
+
+        export = runpy.run_path(str(SCRIPT))['export_glb_mm']
+        assembly = cq.Assembly(name='cancel-control', loc=cq.Location((10, 20, 30)))
+        assembly.add(cq.Workplane('XY').box(4, 6, 8), name='box')
+        original_location = assembly.loc
+        original_writer = gltf.RWGltf_CafWriter
+        cancellation = KeyboardInterrupt('cancel GLB writer')
+
+        class InterruptedWriter:
+            def __init__(self, *args):
+                self.writer = original_writer(*args)
+            def ChangeCoordinateSystemConverter(self):
+                return self.writer.ChangeCoordinateSystemConverter()
+            def Perform(self, *args):
+                raise cancellation
+
+        with mock.patch.object(gltf, 'RWGltf_CafWriter', InterruptedWriter):
+            with self.assertRaises(KeyboardInterrupt) as raised:
+                export(assembly, self.cwd / 'interrupted.glb')
+        self.assertIs(raised.exception, cancellation)
+        self.assertIs(assembly.loc, original_location)
+        # Reuse the same assembly, with an unrelated export between two repeats.
+        export(assembly, self.cwd / 'first.glb')
+        other = cq.Assembly(name='other')
+        other.add(cq.Workplane('XY').box(1, 2, 3), name='other-box')
+        export(other, self.cwd / 'other.glb')
+        export(assembly, self.cwd / 'repeat.glb')
+        first = trimesh.load(self.cwd / 'first.glb')
+        repeat = trimesh.load(self.cwd / 'repeat.glb')
+        self.assertTrue(np.allclose(first.bounds, repeat.bounds, rtol=0, atol=1e-8))
+        self.assertTrue(np.allclose(first.extents, [0.004, 0.008, 0.006],
+                                    rtol=0, atol=1e-7))
+        self.assertIs(assembly.loc, original_location)
+
+    def test_rejects_scaled_real_step_import_before_later_exports(self):
+        result = self.invoke('--output-dir', 'runs', prelude="""
+import cadquery as cq
+original_import = cq.importers.importStep
+def scaled_import(path):
+    part = original_import(path)
+    return part.newObject([shape.scale(25.4) for shape in part.vals()])
+cq.importers.importStep = scaled_import
+""")
+        self.assertNotEqual(result.returncode, 0)
+        _, report = self.read_report(result)
+        self.assertEqual(report['status'], 'failed')
+        self.assertEqual(report['error'], 'fit-plate-hole-6.0 STEP roundtrip')
+        self.assertEqual(len(report['checks']), 4)
+        self.assertTrue(all(c['passed'] for c in report['checks'][:-1]))
+        self.assertFalse(report['checks'][-1]['passed'])
+        self.assertEqual([f['name'] for f in report['files']],
+                         ['fit-plate-hole-6.0.step'])
 
     def test_real_exports_and_checksums_preserve_previous_run(self):
         result = self.invoke('--output-dir', 'runs')
