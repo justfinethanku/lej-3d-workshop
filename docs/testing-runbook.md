@@ -107,3 +107,20 @@ The current-source verifier's help and missing-dependency report were also
 checked without site-packages. No macOS/Windows installation, uv bootstrap,
 Blender/slicer import, printer connection, or physical print was exercised in
 this Linux smoke test. These limits are separate from historical macOS results.
+
+## Documentation recovery smoke test
+
+The [interrupted-export recovery procedure](../skill/lej-3d-workshop/references/cadquery.md#recover-interrupted-or-rejected-exports)
+was exercised on November 7, 2026, on Linux arm64/Python 3.12 with the pinned
+CAD stack. In an isolated caller, a patched exporter wrote a partial second
+plate SVG and raised `OSError`: the report recorded `failed`, 15 successful
+checks, no failed check, and eight checksummed partial exports. Separate real
+STEP imports followed by a 25.4 scale change or `KeyboardInterrupt` retained
+one STEP each and stopped before STL. Removing the patches and running the
+public CLI against the same parent produced a new passed run with 29 checks
+and 16 exports, preserving all 13 earlier files, including the three reports.
+
+The procedure's read-only Python inspection was run on each retained run and
+on a deliberately changed copy to check checksum rejection. These are injected
+software failures, not observed user incidents. No forced process termination,
+disk-full experiment, slicer or physical-print validation was performed.

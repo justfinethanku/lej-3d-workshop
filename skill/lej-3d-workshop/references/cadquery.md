@@ -88,6 +88,69 @@ and your bundle's `VERSION` when comparing behavior.
   exports. Keep the failed run for comparison; fixing the cause and re-running
   creates a separate timestamped run.
 
+### Recover interrupted or rejected exports
+
+Use this procedure with current source and the isolated CAD environment from
+[Install and run](#install-and-run). The cancellation reporting and geometry
+checks are Unreleased changes. A source-built bundle can still have `0.1.0` in
+`VERSION`; retain its source commit as well as the runtime versions when
+comparing it with the published v0.1.0 asset.
+
+1. Keep the invocation's exit status, stdout and traceback. Locate **that
+   invocation's** timestamped folder under `--output-dir`; an older successful
+   run says nothing about the interrupted one. Keep its exports and report
+   together. The verifier stops at the first exception or failed check, so
+   later formats and parts may be absent.
+2. Read `status`, `error`, and any check with `passed: false`. An exporter can
+   raise between checks: even when every recorded check passed, the run can
+   have `status: "failed"`. Cancellation caught inside verification records
+   `KeyboardInterrupt` or `SystemExit` when the exception has no message, then
+   propagates the original exception. A missing, truncated, or still-`running`
+   report after termination is incomplete evidence; forced termination and
+   failure while writing the final report can prevent a terminal report.
+3. Compare retained file sizes and SHA-256 values with the report. From your
+   workshop workspace, run this read-only inspection with Python 3.12:
+
+   ```sh
+   python3 - "Projects/cadquery-tryout/RUN_TIMESTAMP" <<'PY'
+   from pathlib import Path
+   import hashlib
+   import json
+   import sys
+
+   run = Path(sys.argv[1])
+   report = json.loads((run / "validation.json").read_text())
+   print("status:", report["status"], "error:", report.get("error"))
+   print("failed checks:", [c for c in report["checks"] if not c["passed"]])
+   for entry in report["files"]:
+       data = (run / entry["name"]).read_bytes()
+       if (len(data) != entry["bytes"] or
+               hashlib.sha256(data).hexdigest() != entry["sha256"]):
+           raise SystemExit("Recorded bytes changed: " + entry["name"])
+   print("Recorded file bytes match:", len(report["files"]))
+   PY
+   ```
+
+   Replace `RUN_TIMESTAMP` with the exact run directory name, or replace the
+   entire quoted path with its absolute path. Missing files, invalid JSON and
+   changed bytes fail inspection. Matching hashes only identify retained bytes;
+   they do not establish valid geometry or a successful run. A partial SVG or
+   rejected mesh can itself have a matching hash. The report is not self-hashed.
+4. Correct the cause in the source model, exporter or isolated runtime. For a
+   failed `STEP roundtrip`, compare the original solid's dimensions and volume
+   with the reloaded STEP; a 25.4 scale change fails this fixture before STL
+   export. For a 3MF failure, inspect the recorded error and built dimensions;
+   changing the unit label alone does not rescale vertices. For a GLB bounds
+   failure, inspect scene transforms and the mm-to-meter conversion described
+   above. The 40 mm fixture spans 0.04 m in GLB. Preserve rejected outputs for
+   diagnosis instead of editing their reports to mark them passed.
+5. Re-run the [verifier command](#verify-a-first-time-installation) with the
+   same **parent** output directory. It creates a fresh timestamped child and
+   recomputes all exports; there is no resume-from-partial-file mode. Accept the
+   new run only after exit zero, `status: "passed"`, all 29 checks passed, and
+   all 16 exports are present with matching recorded sizes and hashes. Keep the
+   failed run separate so the successful retry does not erase its evidence.
+
 For cleanup, remove only the generated run directories you no longer need.
 Keep source models and reports you want to preserve. Removing the isolated
 `Shared Tools/cadquery/.venv/` reclaims the runtime; recreate it with the install
