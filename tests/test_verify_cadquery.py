@@ -63,6 +63,22 @@ class VerifierCLI(VerifierBase):
         self.assertIn('--output-dir', result.stdout)
         self.assertEqual(list(self.cwd.iterdir()), [])
 
+    def test_loading_helpers_has_no_cli_or_filesystem_side_effects(self):
+        for arguments in ([], ['--unrelated-host-argument']):
+            with self.subTest(arguments=arguments):
+                code = ("import runpy, sys\n"
+                        f"sys.argv = ['host-program'] + {arguments!r}\n"
+                        f"module = runpy.run_path({str(SCRIPT)!r})\n"
+                        "assert callable(module['three_mf_bounds'])\n"
+                        "assert callable(module['export_glb_mm'])\n")
+                result = subprocess.run([sys.executable, '-S', '-c', code],
+                                        cwd=self.cwd, text=True, capture_output=True,
+                                        timeout=30)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout, '')
+                self.assertEqual(result.stderr, '')
+                self.assertEqual(list(self.cwd.iterdir()), [])
+
     def test_missing_dependency_records_failed_run(self):
         # -S disables site-packages even in a CAD-enabled environment.
         result = self.invoke('--output-dir', 'runs', without_packages=True)
@@ -77,6 +93,48 @@ class VerifierCLI(VerifierBase):
 
 @unittest.skipUnless(HAS_CAD, 'Install the CAD test requirements for real geometry tests')
 class VerifierGeometry(VerifierBase):
+    def test_success_failure_success_share_no_run_state(self):
+        import contextlib
+        import io
+        import runpy
+        from unittest import mock
+        import cadquery as cq
+
+        verify = runpy.run_path(str(SCRIPT))['verify']
+        parent = self.cwd / 'runs'
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            first = verify(parent)
+            saved = {p.name: p.read_bytes() for p in first.iterdir()}
+            original_export = cq.Workplane.export
+
+            def fail_3mf(part, path, *args, **kwargs):
+                if str(path).endswith('.3mf'):
+                    Path(path).write_bytes(b'partial export from second run')
+                    raise RuntimeError('second run export failed')
+                return original_export(part, path, *args, **kwargs)
+
+            with mock.patch.object(cq.Workplane, 'export', fail_3mf):
+                with self.assertRaisesRegex(RuntimeError, 'second run export failed'):
+                    verify(parent)
+            third = verify(parent)
+
+        self.assertNotEqual(first, third)
+        self.assertEqual({p.name: p.read_bytes() for p in first.iterdir()}, saved)
+        reports = [json.loads((run / 'validation.json').read_text())
+                   for run in sorted(parent.iterdir())]
+        self.assertEqual([r['status'] for r in reports], ['passed', 'failed', 'passed'])
+        self.assertEqual([len(r['checks']) for r in reports], [29, 6, 29])
+        self.assertEqual([len(r['files']) for r in reports], [16, 3, 16])
+        self.assertEqual(reports[0]['checks'], reports[2]['checks'])
+        self.assertEqual(reports[1]['error'], 'second run export failed')
+        self.assertNotIn('error', reports[2])
+        for run, report in zip(sorted(parent.iterdir()), reports):
+            for entry in report['files']:
+                data = (run / entry['name']).read_bytes()
+                self.assertEqual(entry['bytes'], len(data))
+                self.assertEqual(entry['sha256'], hashlib.sha256(data).hexdigest())
+
     def test_real_exports_and_checksums_preserve_previous_run(self):
         result = self.invoke('--output-dir', 'runs')
         self.assertEqual(result.returncode, 0, result.stderr)
